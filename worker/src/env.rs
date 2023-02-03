@@ -1,3 +1,5 @@
+#[cfg(feature = "d1")]
+use crate::d1::D1Database;
 use crate::error::Error;
 #[cfg(feature = "queue")]
 use crate::Queue;
@@ -67,6 +69,12 @@ impl Env {
 
     /// Access an R2 Bucket by the binding name configured in your wrangler.toml file.
     pub fn bucket(&self, binding: &str) -> Result<Bucket> {
+        self.get_binding(binding)
+    }
+
+    /// Access a D1 Database by the binding name configured in your wrangler.toml file.
+    #[cfg(feature = "d1")]
+    pub fn d1(&self, binding: &str) -> Result<D1Database> {
         self.get_binding(binding)
     }
 }
