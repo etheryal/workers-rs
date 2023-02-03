@@ -48,7 +48,7 @@ impl Response {
             });
         }
 
-        Err(Error::Json(("Failed to encode data to json".into(), 500)))
+        Err(Error::Json("Failed to encode data to json".into(), 500))
     }
 
     /// Create a `Response` using the body encoded as HTML. Sets the associated `Content-Type`
@@ -157,9 +157,7 @@ impl Response {
     /// provided is outside the valid HTTP error range of 400-599.
     pub fn error(msg: impl Into<String>, status: u16) -> Result<Self> {
         if !(400..=599).contains(&status) {
-            return Err(Error::Internal(
-                "error status codes must be in the 400-599 range! see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status for more".into(),
-            ));
+            return Err(Error::InvalidStatusCode(status));
         }
 
         Ok(Self {
@@ -181,9 +179,7 @@ impl Response {
     /// Create a `Response` which redirects to the specified URL with a custom status_code
     pub fn redirect_with_status(url: url::Url, status_code: u16) -> Result<Self> {
         if !(300..=399).contains(&status_code) {
-            return Err(Error::Internal(
-                "redirect status codes must be in the 300-399 range! Please checkout https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#redirection_messages for more".into(),
-            ));
+            return Err(Error::InvalidStatusCode(status_code));
         }
         match EdgeResponse::redirect_with_status(url.as_str(), status_code) {
             Ok(edge_response) => Ok(Response::from(edge_response)),
