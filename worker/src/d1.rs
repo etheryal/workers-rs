@@ -13,7 +13,8 @@ use crate::env::EnvBinding;
 use crate::Error;
 use crate::Result;
 
-// A D1 Database.
+#[derive(Debug, Clone, PartialEq, Eq)]
+/// A D1 Database.
 pub struct D1Database(D1DatabaseSys);
 
 /// TODO: Make this thread safe.
