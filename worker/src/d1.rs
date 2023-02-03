@@ -16,6 +16,10 @@ use crate::Result;
 // A D1 Database.
 pub struct D1Database(D1DatabaseSys);
 
+/// TODO: Make this thread safe.
+unsafe impl Send for D1Database {}
+unsafe impl Sync for D1Database {}
+
 impl D1Database {
     /// Prepare a query statement from a query string.
     pub fn prepare<T: Into<String>>(&self, query: T) -> D1PreparedStatement {
