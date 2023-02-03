@@ -1,13 +1,14 @@
 use std::{collections::HashMap, future::Future, rc::Rc};
 
 use futures_util::future::LocalBoxFuture;
-use matchit::{Match, Node};
+use matchit::Match;
+use matchit::Router as Node;
 use worker_kv::KvStore;
 
 use crate::{
     durable::ObjectNamespace,
     env::{Env, Secret, Var},
-    http::Method,
+    method::Method,
     request::Request,
     response::Response,
     Bucket, Fetcher, Result,

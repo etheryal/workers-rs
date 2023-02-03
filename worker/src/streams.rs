@@ -3,6 +3,7 @@ use std::{
     task::{Context, Poll},
 };
 
+use bytes::Bytes;
 use futures_util::{Stream, TryStreamExt};
 use js_sys::{BigInt, Uint8Array};
 use pin_project::pin_project;
@@ -11,7 +12,7 @@ use wasm_streams::readable::IntoStream;
 use web_sys::ReadableStream;
 use worker_sys::FixedLengthStream as FixedLengthStreamSys;
 
-use crate::{Error, Result};
+use crate::Error;
 
 #[pin_project]
 #[derive(Debug)]
@@ -20,8 +21,18 @@ pub struct ByteStream {
     pub(crate) inner: IntoStream<'static>,
 }
 
+/// TODO: Definitely safe
+unsafe impl Send for ByteStream {}
+unsafe impl Sync for ByteStream {}
+
+impl ByteStream {
+    pub fn new(inner: IntoStream<'static>) -> Self {
+        Self { inner }
+    }
+}
+
 impl Stream for ByteStream {
-    type Item = Result<Vec<u8>>;
+    type Item = Result<Vec<u8>, Error>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.project();
@@ -44,11 +55,11 @@ pub struct FixedLengthStream {
     #[pin]
     bytes_read: u64,
     #[pin]
-    inner: Pin<Box<dyn Stream<Item = Result<Vec<u8>>> + 'static>>,
+    inner: Pin<Box<dyn Stream<Item = Result<Vec<u8>, Error>> + 'static>>,
 }
 
 impl FixedLengthStream {
-    pub fn wrap(stream: impl Stream<Item = Result<Vec<u8>>> + 'static, length: u64) -> Self {
+    pub fn wrap(stream: impl Stream<Item = Result<Vec<u8>, Error>> + 'static, length: u64) -> Self {
         Self {
             length,
             bytes_read: 0,
@@ -58,7 +69,7 @@ impl FixedLengthStream {
 }
 
 impl Stream for FixedLengthStream {
-    type Item = Result<Vec<u8>>;
+    type Item = Result<Vec<u8>, Error>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
@@ -118,5 +129,24 @@ impl From<FixedLengthStream> for FixedLengthStreamSys {
         let _ = stream.pipe_to(&raw.writable());
 
         raw
+    }
+}
+
+impl http_body::Body for ByteStream {
+    type Data = Bytes;
+    type Error = Error;
+
+    fn poll_data(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Result<Self::Data, Self::Error>>> {
+        self.poll_next(cx).map_ok(Bytes::from)
+    }
+
+    fn poll_trailers(
+        self: Pin<&mut Self>,
+        _: &mut Context<'_>,
+    ) -> Poll<Result<Option<http::HeaderMap>, Self::Error>> {
+        Poll::Ready(Ok(None))
     }
 }

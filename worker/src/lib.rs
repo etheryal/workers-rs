@@ -37,7 +37,7 @@ pub use crate::fetcher::Fetcher;
 pub use crate::formdata::*;
 pub use crate::global::Fetch;
 pub use crate::headers::Headers;
-pub use crate::http::Method;
+pub use crate::method::Method;
 #[cfg(feature = "queue")]
 pub use crate::queue::*;
 pub use crate::r2::*;
@@ -66,10 +66,11 @@ mod fetcher;
 mod formdata;
 mod global;
 mod headers;
-mod http;
 #[cfg(feature = "queue")]
 mod queue;
 mod r2;
+pub mod http_types;
+mod method;
 mod request;
 mod request_init;
 mod response;
@@ -79,3 +80,9 @@ mod streams;
 mod websocket;
 
 pub type Result<T> = StdResult<T, error::Error>;
+
+pub use ::http;
+pub use ::http_body;
+
+pub type HttpRequest = ::http::Request<ByteStream>;
+pub type HttpResponse<B> = ::http::Response<B>;

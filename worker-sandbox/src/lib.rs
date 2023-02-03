@@ -88,7 +88,7 @@ pub fn start() {
 }
 
 #[event(fetch)]
-pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
+pub async fn main(req: worker::Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     let data = SomeSharedData {
         regex: regex::Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap(),
     };
@@ -714,6 +714,23 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         })
         .run(req, env)
         .await
+}
+
+mod fetch_http {
+    use worker::{console_log, event, http_body::Full, Env, Result};
+
+    /// Example of using the `http` flag for the fetch proc macro. This
+    /// transforms the request into a hyper::Request<ByteStream> and accepts
+    /// any response that implementes http_body::Body + 'static.
+    #[event(fetch, http)]
+    async fn _fetch_http(
+        req: worker::HttpRequest,
+        _env: Env,
+        _ctx: worker::Context,
+    ) -> Result<worker::HttpResponse<Full<&'static [u8]>>> {
+        console_log!("{}", req.method());
+        Ok(worker::HttpResponse::new("Hello, World!".as_bytes().into()))
+    }
 }
 
 fn respond<D>(req: Request, _ctx: RouteContext<D>) -> Result<Response> {
