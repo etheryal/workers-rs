@@ -117,7 +117,6 @@ impl D1PreparedStatement {
     /// # Considerations
     ///
     /// Supports Ordered (?NNNN) and Anonymous (?) parameters - named parameters are currently not supported.
-    ///
     pub fn bind<T>(&self, values: &[&T]) -> Result<Self>
     where
         T: serde::ser::Serialize + ?Sized,
@@ -131,6 +130,38 @@ impl D1PreparedStatement {
         let array: Array = params.into_iter().collect::<Array>();
 
         match self.0.bind(array) {
+            Ok(stmt) => Ok(D1PreparedStatement(stmt)),
+            Err(err) => Err(Error::from(err)),
+        }
+    }
+
+    /// Bind a single parameter to the statement. Returns a new statement object.
+    ///
+    /// D1 follows the SQLite convention for prepared statements parameter binding.
+    ///
+    /// # Considerations
+    ///
+    /// Supports Ordered (?NNNN) and Anonymous (?) parameters - named parameters are currently not supported.
+    pub fn bind_one<T>(&self, value: &T) -> Result<Self>
+    where
+        T: serde::ser::Serialize + ?Sized,
+    {
+        let res = serde_wasm_bindgen::to_value(value)?;
+        match self.0.bind_1(res) {
+            Ok(stmt) => Ok(D1PreparedStatement(stmt)),
+            Err(err) => Err(Error::from(err)),
+        }
+    }
+
+    /// Bind a single [`JsValue`] parameter to the statement. Returns a new statement object.
+    ///
+    /// D1 follows the SQLite convention for prepared statements parameter binding.
+    ///
+    /// # Considerations
+    ///
+    /// Supports Ordered (?NNNN) and Anonymous (?) parameters - named parameters are currently not supported.
+    pub fn bind_js_value(&self, value: &JsValue) -> Result<Self> {
+        match self.0.bind_1(value.clone()) {
             Ok(stmt) => Ok(D1PreparedStatement(stmt)),
             Err(err) => Err(Error::from(err)),
         }
