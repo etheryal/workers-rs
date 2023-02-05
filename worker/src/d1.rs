@@ -252,6 +252,11 @@ impl D1Result {
     }
 }
 
+
+/// TODO: Make this thread safe.
+unsafe impl Send for D1Result {}
+unsafe impl Sync for D1Result {}
+
 /// The result of a D1 query execution.
 #[derive(Debug)]
 pub struct D1ExecResult(D1ExecResultSys);
@@ -267,3 +272,7 @@ impl D1ExecResult {
         self.0.time()
     }
 }
+
+/// TODO: Make this thread safe.
+unsafe impl Send for D1ExecResult {}
+unsafe impl Sync for D1ExecResult {}
