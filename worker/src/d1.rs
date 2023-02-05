@@ -5,7 +5,7 @@ use serde::de::Deserialize;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use worker_sys::d1::D1Database as D1DatabaseSys;
-use worker_sys::d1::D1ExecResult;
+use worker_sys::d1::D1ExecResult as D1ExecResultSys;
 use worker_sys::d1::D1PreparedStatement as D1PreparedStatementSys;
 use worker_sys::d1::D1Result as D1ResultSys;
 
@@ -65,8 +65,8 @@ impl D1Database {
     /// If an error occurs, an exception is thrown with the query and error
     /// messages, execution stops and further statements are not executed.
     pub async fn exec(&self, query: &str) -> Result<D1ExecResult> {
-        let result = JsFuture::from(self.0.exec(query)).await?;
-        Ok(result.into())
+        let result: D1ExecResultSys = JsFuture::from(self.0.exec(query)).await?.into();
+        Ok(D1ExecResult(result))
     }
 }
 
@@ -249,5 +249,21 @@ impl D1Result {
         } else {
             Ok(Vec::new())
         }
+    }
+}
+
+/// The result of a D1 query execution.
+#[derive(Debug)]
+pub struct D1ExecResult(D1ExecResultSys);
+
+impl D1ExecResult {
+    /// Returns the count of rows affected by the query.
+    pub fn rows_affected(&self) -> u32 {
+        self.0.count().unwrap_or(0)
+    }
+
+    /// Returns the time taken to execute the query.
+    pub fn time_taken(&self) -> Option<f64> {
+        self.0.time()
     }
 }
